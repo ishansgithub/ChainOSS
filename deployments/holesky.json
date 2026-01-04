@@ -1,0 +1,11 @@
+{
+  "network": "holesky",
+  "chainId": 17000,
+  "deployer": "0x4C20760bf69f8d6f4A36F94fA4B0e5B35A4C7540",
+  "timestamp": "2026-01-03T23:28:00.876Z",
+  "contracts": {
+    "OSSToken": "0xf7f15936c98F92b1e9b282E0A68047D93f7708C8",
+    "OSSRewardsV2": "0x1113f021FcacD901e1733e2Ef14De3f0AF1fF210",
+    "OSSDAO": "0xBC5B48486F60CcEe98CDc01337da2955Aa132BDF"
+  }
+}

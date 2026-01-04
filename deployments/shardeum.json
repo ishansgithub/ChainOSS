@@ -1,0 +1,11 @@
+{
+  "network": "shardeum",
+  "chainId": 8119,
+  "deployer": "0x8AA801488f76C64a7Ac6A33d5351Af7C9e4BFD02",
+  "timestamp": "2026-01-04T00:13:38.709Z",
+  "contracts": {
+    "OSSToken": "0x57cD7D95514D72260Ada22EB92fc6741ff2762a2",
+    "OSSRewardsV2": "0x2a8c46707Cda240e97Af48381702A48b83c8d43F",
+    "OSSDAO": "0x8c531D7834d7b49afDDC6da6E3A39c3cc43Ef95c"
+  }
+}

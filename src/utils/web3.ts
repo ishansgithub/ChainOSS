@@ -168,13 +168,13 @@ class Web3Service {
     githubPR: string,
     category: number
   ): Promise<ethers.TransactionResponse> {
-    if (!this.signer || !CONTRACT_ADDRESSES.REWARDS) {
+    if (!this.signer || !CONTRACT_ADDRESSES.REWARDS_V2) {
       throw new Error('Wallet not connected or Rewards contract not deployed');
     }
 
     try {
       const rewardsContract = new ethers.Contract(
-        CONTRACT_ADDRESSES.REWARDS,
+        CONTRACT_ADDRESSES.REWARDS_V2,
         REWARDS_ABI,
         this.signer
       );
@@ -194,13 +194,13 @@ class Web3Service {
   }
 
   async validateContribution(contributionId: number, approve: boolean): Promise<ethers.TransactionResponse> {
-    if (!this.signer || !CONTRACT_ADDRESSES.REWARDS) {
+    if (!this.signer || !CONTRACT_ADDRESSES.REWARDS_V2) {
       throw new Error('Wallet not connected or Rewards contract not deployed');
     }
 
     try {
       const rewardsContract = new ethers.Contract(
-        CONTRACT_ADDRESSES.REWARDS,
+        CONTRACT_ADDRESSES.REWARDS_V2,
         REWARDS_ABI,
         this.signer
       );
@@ -214,13 +214,13 @@ class Web3Service {
   }
 
   async claimReward(contributionId: number): Promise<ethers.TransactionResponse> {
-    if (!this.signer || !CONTRACT_ADDRESSES.REWARDS) {
+    if (!this.signer || !CONTRACT_ADDRESSES.REWARDS_V2) {
       throw new Error('Wallet not connected or Rewards contract not deployed');
     }
 
     try {
       const rewardsContract = new ethers.Contract(
-        CONTRACT_ADDRESSES.REWARDS,
+        CONTRACT_ADDRESSES.REWARDS_V2,
         REWARDS_ABI,
         this.signer
       );
@@ -234,13 +234,13 @@ class Web3Service {
   }
 
   async registerAsValidator(): Promise<ethers.TransactionResponse> {
-    if (!this.signer || !CONTRACT_ADDRESSES.REWARDS) {
+    if (!this.signer || !CONTRACT_ADDRESSES.REWARDS_V2) {
       throw new Error('Wallet not connected or Rewards contract not deployed');
     }
 
     try {
       const rewardsContract = new ethers.Contract(
-        CONTRACT_ADDRESSES.REWARDS,
+        CONTRACT_ADDRESSES.REWARDS_V2,
         REWARDS_ABI,
         this.signer
       );
@@ -276,7 +276,7 @@ class Web3Service {
 
 
   async getAllContributions(): Promise<any[]> {
-    if (!this.provider || !CONTRACT_ADDRESSES.REWARDS) {
+    if (!this.provider || !CONTRACT_ADDRESSES.REWARDS_V2) {
       console.log('Provider or Rewards contract not available');
       return [];
     }
@@ -284,7 +284,7 @@ class Web3Service {
     try {
       console.log('Creating Rewards contract instance...');
       const rewardsContract = new ethers.Contract(
-        CONTRACT_ADDRESSES.REWARDS,
+        CONTRACT_ADDRESSES.REWARDS_V2,
         REWARDS_ABI,
         this.provider
       );
@@ -350,7 +350,7 @@ class Web3Service {
 
   // Check if contracts are deployed
   isContractsDeployed(): boolean {
-    return !!(CONTRACT_ADDRESSES.TOKEN && CONTRACT_ADDRESSES.REWARDS);
+    return !!(CONTRACT_ADDRESSES.TOKEN && CONTRACT_ADDRESSES.REWARDS_V2);
   }
 
   // Get contract instances (for advanced usage)
@@ -362,8 +362,8 @@ class Web3Service {
 
 
   getRewardsContract() {
-    if (!this.provider || !CONTRACT_ADDRESSES.REWARDS) return null;
-    return new ethers.Contract(CONTRACT_ADDRESSES.REWARDS, REWARDS_ABI, this.provider);
+    if (!this.provider || !CONTRACT_ADDRESSES.REWARDS_V2) return null;
+    return new ethers.Contract(CONTRACT_ADDRESSES.REWARDS_V2, REWARDS_ABI, this.provider);
   }
 }
 
