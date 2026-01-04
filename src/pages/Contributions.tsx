@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useWeb3 } from "../contexts/Web3Context";
 import { web3Service, ContributionCategory } from "../utils/web3";
+import { 
+  createContribution, 
+  getContributions, 
+  createValidation,
+  updateContribution,
+  getContributionById
+} from "../firebase";
 import {
   PlusIcon,
   CodeBracketIcon,
@@ -12,10 +19,12 @@ import {
   LinkIcon,
   SparklesIcon,
   GiftIcon,
+  CpuChipIcon,
+  ServerIcon
 } from "@heroicons/react/24/outline";
 
 interface Contribution {
-  id: number;
+  id: string; 
   title: string;
   description: string;
   projectUrl: string;
@@ -30,6 +39,7 @@ interface Contribution {
   rewardAmount: string;
   claimed: boolean;
   isMock?: boolean;
+  voters?: string[]; 
 }
 
 const Contributions: React.FC = () => {
@@ -53,7 +63,7 @@ const Contributions: React.FC = () => {
     // Mock contributions data
     const mockContributions: Contribution[] = [
       {
-        id: 1,
+        id: "1",
         title: "Advanced Memory Pool Optimization",
         description:
           "Implemented sophisticated memory management techniques in the transaction pool, achieving 42% reduction in memory footprint and faster transaction processing.",
@@ -71,7 +81,7 @@ const Contributions: React.FC = () => {
         isMock: true,
       },
       {
-        id: 2,
+        id: "2",
         title: "Zero-Knowledge Proof Integration",
         description:
           "Developed and integrated zk-SNARK verification modules for enhanced privacy in cross-chain transactions. Includes comprehensive test coverage and formal verification.",
@@ -89,7 +99,7 @@ const Contributions: React.FC = () => {
         isMock: true,
       },
       {
-        id: 3,
+        id: "3",
         title: "Real-time WebSocket Event System",
         description:
           "Built a scalable real-time notification system using WebSockets and Redis pub/sub, enabling instant updates for governance proposals and voting events.",
@@ -107,7 +117,7 @@ const Contributions: React.FC = () => {
         isMock: true,
       },
       {
-        id: 4,
+        id: "4",
         title: "Multi-signature Wallet Enhancement",
         description:
           "Enhanced the mobile wallet with multi-signature capabilities, hardware wallet integration, and biometric authentication for improved security.",
@@ -125,7 +135,7 @@ const Contributions: React.FC = () => {
         isMock: true,
       },
       {
-        id: 5,
+        id: "5",
         title: "Interactive Developer Playground",
         description:
           "Created an interactive coding environment with live smart contract testing, step-by-step tutorials, and integrated IDE features for new developers.",
@@ -146,28 +156,43 @@ const Contributions: React.FC = () => {
 
     try {
       setLoading(true);
-
-      if (web3Service.isContractsDeployed()) {
-        const fetchedContributions = await web3Service.getAllContributions();
-
-        if (fetchedContributions && fetchedContributions.length > 0) {
-          const realContributions = fetchedContributions.map((c) => ({
-            ...c,
-            isMock: false,
-          }));
-          setContributions(
-            [...realContributions, ...mockContributions].sort(
-              (a, b) => b.id - a.id
-            )
-          );
-        } else {
-          setContributions(mockContributions);
+      
+      // Set mock contributions directly
+      setContributions(mockContributions);
+      
+      // Try to fetch from Firebase if available, but don't override mock data
+      if (process.env.REACT_APP_FIREBASE_API_KEY && process.env.REACT_APP_FIREBASE_PROJECT_ID) {
+        try {
+          const firebaseContributions = await getContributions(50);
+          if (firebaseContributions.length > 0) {
+            // Add Firebase contributions to mock data
+            const transformedFirebase = firebaseContributions.map((contrib: any) => ({
+              id: contrib.id,
+              title: contrib.title,
+              description: contrib.description,
+              projectUrl: contrib.projectUrl || "",
+              githubPR: contrib.githubPR || "",
+              contributor: contrib.contributor || "",
+              category: contrib.category || 0,
+              submissionTime: contrib.createdAt?.toDate() || new Date(),
+              approvalVotes: contrib.approvalVotes || 0,
+              rejectionVotes: contrib.rejectionVotes || 0,
+              totalValidators: contrib.totalValidators || 0,
+              status: contrib.status || 0,
+              rewardAmount: contrib.rewardAmount || "0",
+              claimed: contrib.claimed || false,
+              voters: contrib.voters || [],
+              isMock: false
+            }));
+            setContributions([...transformedFirebase, ...mockContributions]);
+          }
+        } catch (error) {
+          console.log("Firebase fetch failed, using mock data only");
         }
-      } else {
-        setContributions(mockContributions);
       }
     } catch (error) {
       console.error("Failed to fetch contributions:", error);
+      // Fallback to mock data
       setContributions(mockContributions);
     } finally {
       setLoading(false);
@@ -286,9 +311,9 @@ const Contributions: React.FC = () => {
         return;
       }
 
-      // Create a new mock contribution with current form data
+      // Create a new contribution for immediate display
       const newContribution: Contribution = {
-        id: contributions.length + 1,
+        id: Date.now().toString(), // Use timestamp as unique ID
         title: formData.title,
         description: formData.description,
         projectUrl: formData.projectUrl,
@@ -303,10 +328,42 @@ const Contributions: React.FC = () => {
         rewardAmount: "0",
         claimed: false,
         isMock: true,
+        voters: []
       };
 
-      // Add the new contribution to the list
+      // Add the new contribution to the list immediately
       setContributions((prev) => [newContribution, ...prev]);
+
+      // Try to save to Firebase if available
+      if (process.env.REACT_APP_FIREBASE_API_KEY && process.env.REACT_APP_FIREBASE_PROJECT_ID) {
+        try {
+          const contributionData = {
+            title: formData.title,
+            description: formData.description,
+            projectUrl: formData.projectUrl,
+            githubPR: formData.githubPR,
+            contributor: newContribution.contributor,
+            category: category.contractValue,
+            approvalVotes: 0,
+            rejectionVotes: 0,
+            totalValidators: 0,
+            status: 0,
+            rewardAmount: "0",
+            claimed: false,
+            voters: []
+          };
+
+          const firebaseId = await createContribution(contributionData);
+          if (firebaseId) {
+            // Update the contribution with the Firebase ID
+            setContributions((prev) => 
+              prev.map(c => c.id === newContribution.id ? { ...c, id: firebaseId } : c)
+            );
+          }
+        } catch (error) {
+          console.error("Firebase save failed:", error);
+        }
+      }
 
       // Try to submit to blockchain if available
       if (web3Service.isContractsDeployed()) {
@@ -338,33 +395,82 @@ const Contributions: React.FC = () => {
     }
   };
 
-  const handleVote = async (contributionId: number, approve: boolean) => {
+  const handleVote = async (contributionId: string, approve: boolean) => {
     if (!isConnected) {
       alert("Please connect your wallet first");
       return;
     }
 
     try {
-      const tx = await web3Service.validateContribution(
-        contributionId,
-        approve
+      // Get current contribution
+      const contribution = contributions.find(c => c.id === contributionId);
+      if (!contribution) {
+        alert("Contribution not found");
+        return;
+      }
+
+      // Check if user has already voted
+      if (contribution.voters?.includes(account || "")) {
+        alert("You have already voted on this contribution");
+        return;
+      }
+
+      // Update local state immediately for instant feedback
+      const updatedData = {
+        approvalVotes: approve ? contribution.approvalVotes + 1 : contribution.approvalVotes,
+        rejectionVotes: !approve ? contribution.rejectionVotes + 1 : contribution.rejectionVotes,
+        totalValidators: contribution.totalValidators + 1,
+        voters: [...(contribution.voters || []), account || ""]
+      };
+
+      setContributions((prev) => 
+        prev.map(c => c.id === contributionId ? { ...c, ...updatedData } : c)
       );
+
+      // Try to update in Firebase if available
+      if (process.env.REACT_APP_FIREBASE_API_KEY && process.env.REACT_APP_FIREBASE_PROJECT_ID) {
+        try {
+          const success = await updateContribution(contributionId, updatedData);
+          if (!success) {
+            throw new Error("Failed to update vote in Firebase");
+          }
+        } catch (error) {
+          console.error("Firebase vote update failed:", error);
+          // Revert local state if Firebase update failed
+          setContributions((prev) => 
+            prev.map(c => c.id === contributionId ? { ...c, ...contribution } : c)
+          );
+          throw error;
+        }
+      }
+
+      // Try to submit vote to blockchain if available
+      if (web3Service.isContractsDeployed()) {
+        try {
+          await web3Service.validateContribution(
+            parseInt(contributionId),
+            approve
+          );
+        } catch (error) {
+          console.error("Blockchain vote failed:", error);
+        }
+      }
+
       alert("Vote submitted successfully!");
-      fetchContributions();
     } catch (error) {
       console.error("Failed to vote:", error);
       alert("Failed to vote: " + (error as Error).message);
     }
   };
 
-  const handleClaimReward = async (contributionId: number) => {
+  const handleClaimReward = async (contributionId: string) => {
     if (!isConnected) {
       alert("Please connect your wallet first");
       return;
     }
 
     try {
-      const tx = await web3Service.claimReward(contributionId);
+      const tx = await web3Service.claimReward(parseInt(contributionId));
       alert("Reward claimed successfully!");
       fetchContributions();
     } catch (error) {
@@ -375,169 +481,123 @@ const Contributions: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-slate-800 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-black via-emerald-950 to-black font-mono flex items-center justify-center">
         <div className="text-center">
-          <div className="w-12 h-12 border-2 border-gray-600 border-t-white rounded-full animate-spin mx-auto mb-6"></div>
-          <p className="text-gray-300 text-lg font-light">
-            Loading contributions...
-          </p>
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-emerald-500/10 border border-emerald-500/30 rounded-xl mb-8 relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-green-400 rounded-xl blur-lg opacity-30"></div>
+            <ServerIcon className="w-10 h-10 text-emerald-400 relative z-10 animate-pulse" />
+          </div>
+          <h2 className="text-4xl font-black text-white mb-4 tracking-wider uppercase">Loading_Data</h2>
+          <div className="w-20 h-1 bg-gradient-to-r from-transparent via-emerald-400 to-transparent mx-auto mb-8"></div>
+          <p className="text-xl text-emerald-400/80 font-bold tracking-wider uppercase">Fetching_Contributions...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-slate-800 text-white">
-      {/* Header Section */}
-      <div className="bg-gradient-to-r from-slate-800/50 to-gray-800/50 backdrop-blur-sm border-b border-gray-700/50">
-        <div className="max-w-7xl mx-auto px-8 py-16">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
-            <div className="space-y-4">
-              <div className="inline-flex items-center space-x-2 text-sm font-medium text-blue-400 bg-blue-400/10 px-3 py-1 rounded-full border border-blue-400/20">
-                <SparklesIcon className="w-4 h-4" />
-                <span>Community Contributions</span>
-              </div>
-              <h1 className="text-5xl lg:text-6xl font-light text-white leading-tight">
-                Shape the Future
-              </h1>
-              <p className="text-xl text-gray-300 max-w-2xl leading-relaxed">
-                Submit your work, earn rewards, and help build the next
-                generation of open-source technology through community
-                validation.
-              </p>
-              <div className="flex flex-wrap gap-6 text-sm">
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-emerald-400 rounded-full"></div>
-                  <span className="text-gray-400">
-                    {contributions.filter((c) => c.status === 1).length}{" "}
-                    Approved
-                  </span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-amber-400 rounded-full"></div>
-                  <span className="text-gray-400">
-                    {contributions.filter((c) => c.status === 0).length} Pending
-                  </span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                  <span className="text-gray-400">
-                    {contributions.length} Total
-                  </span>
-                </div>
-              </div>
-            </div>
-            {isConnected && (
-              <div className="flex flex-col sm:flex-row gap-4">
-                <button
-                  onClick={() => setShowSubmitForm(true)}
-                  className="group relative px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-xl hover:shadow-2xl hover:shadow-blue-500/25 transform hover:-translate-y-1"
-                >
-                  <div className="flex items-center space-x-3">
-                    <PlusIcon className="w-5 h-5" />
-                    <span>Submit Contribution</span>
-                  </div>
-                  <div className="absolute inset-0 bg-gradient-to-r from-blue-400/20 to-purple-400/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
-                </button>
-              </div>
-            )}
+    <div className="min-h-screen bg-gradient-to-br from-black via-emerald-950 to-black font-mono">
+      {/* Animated Background Effects */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-20 left-20 w-[400px] h-[400px] bg-gradient-to-r from-emerald-400/20 via-green-500/10 to-transparent rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-20 right-20 w-[500px] h-[500px] bg-gradient-to-l from-green-400/15 via-emerald-500/10 to-transparent rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
+      </div>
+
+      <div className="container mx-auto px-6 lg:px-8 max-w-7xl relative z-10">
+        {/* Header */}
+        <div className="text-center mb-24">
+          <h1 className="text-6xl lg:text-7xl font-black mb-8 text-white tracking-wider uppercase">
+            Contributions
+          </h1>
+          <div className="w-24 h-1 bg-gradient-to-r from-transparent via-emerald-400 to-transparent mx-auto mb-12"></div>
+          <p className="text-2xl text-white/80 max-w-3xl mx-auto font-medium leading-relaxed tracking-wide">
+            <span className="text-emerald-400 font-bold">&gt;</span> Submit your work, earn rewards, and help build the next generation of open-source technology through community validation.
+          </p>
+        </div>
+
+        {/* Submit Button */}
+        {isConnected && (
+          <div className="text-center mb-16">
+            <button
+              onClick={() => setShowSubmitForm(true)}
+              className="group relative inline-flex items-center space-x-4 px-12 py-6 bg-gradient-to-r from-emerald-500 to-green-500 text-white rounded-2xl hover:from-emerald-600 hover:to-green-600 transition-all duration-300 font-black tracking-wider uppercase text-xl shadow-lg hover:shadow-emerald-500/25 transform hover:-translate-y-2"
+            >
+              <PlusIcon className="w-8 h-8" />
+              <span>Submit_Contribution</span>
+              <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/20 to-green-400/20 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            </button>
+          </div>
+        )}
+
+        {!isConnected && (
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-4 px-12 py-6 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl backdrop-blur-sm">
+              <ServerIcon className="w-8 h-8 text-emerald-400" />
           </div>
         </div>
-      </div>
+      )}
 
       <div className="max-w-7xl mx-auto px-8 py-12">
         {/* Contributions List */}
-        {contributions.length === 0 ? (
-          <div className="text-center py-32">
-            <div className="w-24 h-24 mx-auto mb-8 bg-gradient-to-br from-gray-800 to-gray-700 rounded-2xl flex items-center justify-center shadow-xl">
-              <CodeBracketIcon className="w-12 h-12 text-gray-400" />
+        <div className="space-y-8">
+          {contributions.length === 0 ? (
+            <div className="text-center py-20">
+              <div className="inline-flex items-center justify-center w-24 h-24 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl mb-8 relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-green-400 rounded-2xl blur-lg opacity-30"></div>
+                <CodeBracketIcon className="w-12 h-12 text-emerald-400 relative z-10" />
+              </div>
+              <h3 className="text-3xl font-black text-white mb-4 tracking-wider uppercase">No_Contributions_Yet</h3>
+              <p className="text-xl text-emerald-400/80 font-bold tracking-wider uppercase">Be_the_first_to_contribute!</p>
             </div>
-            <h2 className="text-3xl font-light text-white mb-4">
-              No contributions yet
-            </h2>
-            <p className="text-gray-400 text-lg mb-12 max-w-md mx-auto leading-relaxed">
-              Be the first to contribute and start earning rewards from the
-              community
-            </p>
-            {isConnected && (
-              <button
-                onClick={() => setShowSubmitForm(true)}
-                className="px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-xl"
-              >
-                Submit First Contribution
-              </button>
-            )}
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {contributions.map((contribution) => (
-              <div
-                key={contribution.id}
-                className="group bg-gradient-to-br from-slate-800/50 to-gray-800/30 backdrop-blur-sm border border-gray-700/50 rounded-2xl overflow-hidden hover:border-gray-600/50 transition-all duration-300 hover:shadow-xl hover:shadow-gray-900/20"
-              >
-                <div className="p-8">
+          ) : (
+            contributions.map((contribution) => (
+              <div key={contribution.id} className="bg-emerald-500/5 backdrop-blur-sm border border-emerald-500/20 rounded-2xl p-10 relative overflow-hidden">
+                {/* Glossy overlay */}
+                <div className="absolute inset-0 bg-gradient-to-br from-emerald-400/10 to-transparent pointer-events-none"></div>
+                
+                <div className="relative z-10">
                   {/* Header */}
-                  <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6 mb-6">
-                    <div className="flex-1 space-y-4">
-                      <div className="flex flex-wrap items-center gap-3">
-                        <h3 className="text-2xl font-light text-white group-hover:text-blue-100 transition-colors">
-                          {contribution.title}
-                        </h3>
-                        <div
-                          className={`px-3 py-1 rounded-full text-xs font-medium border flex items-center space-x-2 ${getStatusColor(
-                            contribution.status
-                          )}`}
-                        >
-                          {getStatusIcon(contribution.status)}
-                          <span>{getStatusText(contribution.status)}</span>
-                        </div>
-                        <div
-                          className={`px-3 py-1 rounded-full text-xs font-medium border ${getCategoryColor(
-                            contribution.category
-                          )}`}
-                        >
+                  <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8">
+                    <div className="space-y-4">
+                      <h3 className="text-3xl font-black text-white tracking-wider uppercase">
+                        {contribution.title}
+                      </h3>
+                      <div className="flex items-center space-x-4">
+                        <span className="px-4 py-2 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-300 font-bold tracking-wider uppercase text-sm">
                           {getCategoryName(contribution.category)}
-                        </div>
+                        </span>
+                        <span className="px-4 py-2 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-300 font-bold tracking-wider uppercase text-sm">
+                          Status: {contribution.status === 0 ? 'Pending' : contribution.status === 1 ? 'Approved' : 'Rejected'}
+                        </span>
                       </div>
-                      <p className="text-gray-300 text-lg leading-relaxed max-w-4xl">
-                        {contribution.description}
-                      </p>
+                    </div>
+                    
+                    <div className="text-right">
+                      <div className="text-2xl font-black text-emerald-400 tracking-wider uppercase mb-2">
+                        {contribution.rewardAmount} OSS
+                      </div>
+                      <div className="text-sm text-emerald-400/70 font-bold tracking-wider uppercase">
+                        Reward
+                      </div>
                     </div>
                   </div>
 
-                  {/* Meta Info */}
-                  <div className="flex flex-wrap items-center gap-6 text-sm text-gray-400 mb-8">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center text-xs font-bold text-white">
-                        {contribution.contributor.slice(2, 4).toUpperCase()}
-                      </div>
-                      <span className="font-mono">
-                        {contribution.contributor.slice(0, 6)}...
-                        {contribution.contributor.slice(-4)}
-                      </span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <ClockIcon className="w-4 h-4" />
-                      <span>
-                        {contribution.submissionTime.toLocaleDateString(
-                          "en-US",
-                          {
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                          }
-                        )}
-                      </span>
-                    </div>
+                  {/* Description */}
+                  <p className="text-xl text-white/80 leading-relaxed font-medium mb-8 tracking-wide">
+                    <span className="text-emerald-400 font-bold">&gt;</span> {contribution.description}
+                  </p>
+
+                  {/* Links */}
+                  <div className="flex flex-wrap gap-4 mb-8">
                     {contribution.projectUrl && (
                       <a
                         href={contribution.projectUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center space-x-2 text-gray-400 hover:text-blue-400 transition-colors group/link"
+                        className="inline-flex items-center space-x-2 text-emerald-400 hover:text-emerald-300 transition-colors group/link"
                       >
-                        <LinkIcon className="w-4 h-4 group-hover/link:rotate-45 transition-transform" />
-                        <span>Project</span>
+                        <LinkIcon className="w-5 h-5 group-hover/link:scale-110 transition-transform" />
+                        <span className="font-bold tracking-wider uppercase">Project_Link</span>
                       </a>
                     )}
                     {contribution.githubPR && (
@@ -545,88 +605,111 @@ const Contributions: React.FC = () => {
                         href={contribution.githubPR}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center space-x-2 text-gray-400 hover:text-blue-400 transition-colors group/link"
+                        className="inline-flex items-center space-x-2 text-emerald-400 hover:text-emerald-300 transition-colors group/link"
                       >
-                        <CodeBracketIcon className="w-4 h-4 group-hover/link:scale-110 transition-transform" />
-                        <span>Pull Request</span>
+                        <CodeBracketIcon className="w-5 h-5 group-hover/link:scale-110 transition-transform" />
+                        <span className="font-bold tracking-wider uppercase">GitHub_PR</span>
                       </a>
                     )}
                   </div>
 
                   {/* Stats */}
-                  <div className="grid grid-cols-3 gap-6 mb-8">
-                    <div className="text-center p-4 bg-emerald-500/5 border border-emerald-500/20 rounded-xl">
-                      <div className="text-3xl font-light text-emerald-400 mb-1">
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div className="text-center p-6 bg-emerald-500/10 border border-emerald-500/30 rounded-xl">
+                      <div className="text-3xl font-black text-emerald-400 mb-2 tracking-wider">
                         {contribution.approvalVotes}
                       </div>
-                      <div className="text-sm text-gray-400">Approved</div>
+                      <div className="text-sm text-emerald-400/70 font-bold tracking-wider uppercase">
+                        Approve
+                      </div>
                     </div>
-                    <div className="text-center p-4 bg-rose-500/5 border border-rose-500/20 rounded-xl">
-                      <div className="text-3xl font-light text-rose-400 mb-1">
+                    <div className="text-center p-6 bg-emerald-500/10 border border-emerald-500/30 rounded-xl">
+                      <div className="text-3xl font-black text-rose-400 mb-2 tracking-wider">
                         {contribution.rejectionVotes}
                       </div>
-                      <div className="text-sm text-gray-400">Rejected</div>
+                      <div className="text-sm text-rose-400/70 font-bold tracking-wider uppercase">
+                        Reject
+                      </div>
                     </div>
-                    <div className="text-center p-4 bg-blue-500/5 border border-blue-500/20 rounded-xl">
-                      <div className="text-3xl font-light text-blue-400 mb-1">
+                    <div className="text-center p-6 bg-emerald-500/10 border border-emerald-500/30 rounded-xl">
+                      <div className="text-3xl font-black text-white mb-2 tracking-wider">
                         {contribution.totalValidators}
                       </div>
-                      <div className="text-sm text-gray-400">Validators</div>
+                      <div className="text-sm text-emerald-400/70 font-bold tracking-wider uppercase">
+                        Validators
+                      </div>
+                    </div>
+                    <div className="text-center p-6 bg-emerald-500/10 border border-emerald-500/30 rounded-xl">
+                      <div className="text-xl font-black text-white mb-2 tracking-wider">
+                        {contribution.contributor.slice(0, 6)}...{contribution.contributor.slice(-4)}
+                      </div>
+                      <div className="text-sm text-emerald-400/70 font-bold tracking-wider uppercase">
+                        Contributor
+                      </div>
                     </div>
                   </div>
 
                   {/* Actions */}
                   {isConnected &&
-                    contribution.status === 0 &&
-                    contribution.contributor !== account && (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                        <button
-                          onClick={() => handleVote(contribution.id, true)}
-                          className="group/btn py-4 px-6 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-medium hover:bg-emerald-500/20 hover:border-emerald-500/40 transition-all duration-200 rounded-xl flex items-center justify-center space-x-3"
-                        >
-                          <HandRaisedIcon className="w-5 h-5 group-hover/btn:scale-110 transition-transform" />
-                          <span>Approve</span>
-                        </button>
-                        <button
-                          onClick={() => handleVote(contribution.id, false)}
-                          className="group/btn py-4 px-6 bg-rose-500/10 border border-rose-500/20 text-rose-400 font-medium hover:bg-rose-500/20 hover:border-rose-500/40 transition-all duration-200 rounded-xl flex items-center justify-center space-x-3"
-                        >
-                          <XCircleIcon className="w-5 h-5 group-hover/btn:scale-110 transition-transform" />
-                          <span>Reject</span>
-                        </button>
+                    contribution.status === 0 && (
+                      <div className="mb-8">
+                        {contribution.contributor !== account ? (
+                          contribution.voters?.includes(account || "") ? (
+                            <div className="text-center py-6 px-8 bg-yellow-500/10 border border-yellow-500/30 rounded-2xl">
+                              <CheckCircleIcon className="w-8 h-8 inline mr-3" />
+                              <span className="text-yellow-400 font-black text-xl tracking-wider uppercase">You have already voted on this contribution</span>
+                            </div>
+                          ) : (
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                              <button
+                                onClick={() => handleVote(contribution.id, true)}
+                                className="group/btn py-6 px-8 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-black hover:bg-emerald-500/20 hover:border-emerald-500/40 transition-all duration-300 rounded-2xl flex items-center justify-center space-x-3 text-xl tracking-wider uppercase"
+                              >
+                                <HandRaisedIcon className="w-8 h-8 group-hover/btn:scale-110 transition-transform" />
+                                <span>Approve</span>
+                              </button>
+                              <button
+                                onClick={() => handleVote(contribution.id, false)}
+                                className="group/btn py-6 px-8 bg-rose-500/10 border border-rose-500/30 text-rose-400 font-black hover:bg-rose-500/20 hover:border-rose-500/40 transition-all duration-300 rounded-2xl flex items-center justify-center space-x-3 text-xl tracking-wider uppercase"
+                              >
+                                <XCircleIcon className="w-8 h-8 group-hover/btn:scale-110 transition-transform" />
+                                <span>Reject</span>
+                              </button>
+                            </div>
+                          )
+                        ) : (
+                          <div className="text-center py-6 px-8 bg-blue-500/10 border border-blue-500/30 rounded-2xl">
+                            <SparklesIcon className="w-8 h-8 inline mr-3" />
+                            <span className="text-blue-400 font-black text-xl tracking-wider uppercase">This is your contribution</span>
+                          </div>
+                        )}
                       </div>
                     )}
 
                   {/* Reward */}
                   {contribution.status === 1 && (
-                    <div className="bg-gradient-to-r from-emerald-500/10 to-green-500/10 border border-emerald-500/30 p-6 rounded-xl">
+                    <div className="bg-gradient-to-r from-emerald-500/10 to-green-500/10 border border-emerald-500/30 p-8 rounded-2xl">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-4">
-                          <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-green-500 rounded-xl flex items-center justify-center">
-                            <GiftIcon className="w-6 h-6 text-white" />
+                          <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-green-500 rounded-2xl flex items-center justify-center">
+                            <GiftIcon className="w-8 h-8 text-white" />
                           </div>
                           <div>
-                            <div className="text-xl font-light text-emerald-400 mb-1">
-                              {contribution.rewardAmount} OSS Tokens
-                            </div>
-                            <div className="text-sm text-gray-400">
-                              Reward Amount
-                            </div>
+                            <h4 className="text-2xl font-black text-emerald-300 tracking-wider uppercase mb-2">Reward Available</h4>
+                            <p className="text-emerald-400/80 font-bold tracking-wider uppercase">Your contribution has been approved!</p>
                           </div>
                         </div>
-                        {contribution.contributor === account &&
-                          !contribution.claimed && (
-                            <button
-                              onClick={() => handleClaimReward(contribution.id)}
-                              className="px-6 py-3 bg-gradient-to-r from-emerald-600 to-green-600 text-white font-medium rounded-xl hover:from-emerald-700 hover:to-green-700 transition-all duration-200 shadow-lg hover:shadow-xl"
-                            >
-                              Claim Reward
-                            </button>
-                          )}
+                        {contribution.contributor === account && !contribution.claimed && (
+                          <button
+                            onClick={() => handleClaimReward(contribution.id)}
+                            className="px-8 py-4 bg-gradient-to-r from-emerald-500 to-green-500 text-white rounded-xl hover:from-emerald-600 hover:to-green-600 transition-all duration-300 font-black tracking-wider uppercase"
+                          >
+                            Claim Reward
+                          </button>
+                        )}
                         {contribution.claimed && (
-                          <div className="flex items-center space-x-2 text-emerald-400 font-medium">
-                            <CheckCircleIcon className="w-5 h-5" />
-                            <span>Claimed</span>
+                          <div className="px-8 py-4 bg-emerald-500/20 border border-emerald-500/40 rounded-xl">
+                            <span className="text-emerald-300 font-bold tracking-wider uppercase">Claimed</span>
                           </div>
                         )}
                       </div>
@@ -634,9 +717,10 @@ const Contributions: React.FC = () => {
                   )}
                 </div>
               </div>
-            ))}
-          </div>
-        )}
+            ))
+          )}
+        </div>
+      </div>  
 
         {/* Submit Form Modal */}
         {showSubmitForm && (

@@ -5,6 +5,8 @@ import {
   ChartBarIcon,
   PlusIcon,
   ArrowTrendingUpIcon,
+  CpuChipIcon,
+  ServerIcon
 } from "@heroicons/react/24/outline";
 
 // Import the new components
@@ -18,30 +20,31 @@ const Dashboard: React.FC = () => {
 
   if (!isConnected) {
     return (
-      <div className="container mx-auto px-6 lg:px-8 max-w-6xl">
+      <div className="container mx-auto px-6 lg:px-8 max-w-6xl font-mono">
         <div className="text-center">
           <div className="max-w-md mx-auto">
             {/* Icon */}
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-white/5 border border-white/10 rounded-xl mb-8">
-              <ChartBarIcon className="w-10 h-10 text-white/70" />
+            <div className="inline-flex items-center justify-center w-24 h-24 bg-emerald-500/10 border border-emerald-500/30 rounded-xl mb-12 relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-green-400 rounded-xl blur-lg opacity-30"></div>
+              <ServerIcon className="w-12 h-12 text-emerald-400 relative z-10" />
             </div>
 
             {/* Title */}
-            <h2 className="text-3xl lg:text-4xl font-light text-white mb-6">
-              Connect Your Wallet
+            <h2 className="text-5xl lg:text-6xl font-black text-white mb-8 tracking-wider uppercase">
+              Connect_Wallet
             </h2>
 
             {/* Divider */}
-            <div className="w-16 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent mx-auto mb-8"></div>
+            <div className="w-20 h-1 bg-gradient-to-r from-transparent via-emerald-400 to-transparent mx-auto mb-12"></div>
 
             {/* Description */}
-            <div className="space-y-6">
-              <p className="text-lg text-white/60 leading-relaxed font-light">
-                Welcome to your Dashboard. Monitor your contributions, track rewards, and stay updated with the latest DAO activities in this comprehensive dashboard.
+            <div className="space-y-8">
+              <p className="text-xl text-white/80 leading-relaxed font-medium tracking-wide">
+                <span className="text-emerald-400 font-bold">&gt;</span> Welcome to your Dashboard. Monitor your contributions, track rewards, and stay updated with the latest DAO activities in this comprehensive dashboard.
               </p>
               
-              <p className="text-sm text-white/50 font-light">
-                Connect your wallet to access personalized dashboard features
+              <p className="text-lg text-emerald-400/70 font-bold tracking-wider uppercase">
+                [ CONNECT_WALLET_TO_ACCESS_DASHBOARD ]
               </p>
             </div>
           </div>
@@ -51,85 +54,88 @@ const Dashboard: React.FC = () => {
   }
 
   return (
-    <div className="space-y-8 animate-fade-in">
+    <div className="space-y-12 animate-fade-in font-mono bg-gradient-to-br from-black via-emerald-950 to-black min-h-screen">
+      {/* Animated Background Effects */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-20 left-20 w-[400px] h-[400px] bg-gradient-to-r from-emerald-400/20 via-green-500/10 to-transparent rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-20 right-20 w-[500px] h-[500px] bg-gradient-to-l from-green-400/15 via-emerald-500/10 to-transparent rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
+      </div>
+
       {/* Header */}
-      <div className="container mx-auto px-6 lg:px-8 max-w-6xl">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-8 sm:space-y-0">
+      <div className="container mx-auto px-6 lg:px-8 max-w-6xl relative z-10">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center space-y-12 lg:space-y-0">
           {/* Header Content */}
-          <div className="space-y-4">
-            <h1 className="text-4xl lg:text-5xl font-light text-white">
-              User Dashboard
+          <div className="space-y-6">
+            <h1 className="text-6xl lg:text-7xl font-black text-white tracking-wider uppercase">
+              User_Dashboard
             </h1>
-            <div className="w-16 h-px bg-gradient-to-r from-white/40 to-transparent"></div>
-            <p className="text-lg text-white/60 font-light leading-relaxed max-w-xl">
-              Welcome back,{" "}
-              <span className="text-white font-medium">contributor</span>!
+            <div className="w-20 h-1 bg-gradient-to-r from-emerald-400 to-transparent"></div>
+            <p className="text-xl text-white/80 font-medium leading-relaxed max-w-2xl tracking-wide">
+              <span className="text-emerald-400 font-bold">&gt;</span> Welcome back,{" "}
+              <span className="text-emerald-300 font-black uppercase tracking-wider">Contributor</span>!
               Here's your decentralized impact overview.
             </p>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex gap-4">
+          <div className="flex gap-6">
             <Link
               to="/contributions"
-              className="group inline-flex items-center space-x-2 px-6 py-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 hover:border-white/20 transition-all duration-300 whitespace-nowrap"
+              className="group relative inline-flex items-center space-x-4 px-10 py-5 bg-emerald-500/10 border border-emerald-500/30 rounded-xl hover:bg-emerald-500/20 hover:border-emerald-500/40 transition-all duration-300 whitespace-nowrap backdrop-blur-sm"
             >
-              <PlusIcon className="w-5 h-5 text-white/70 group-hover:text-white group-hover:rotate-90 transition-all duration-300 flex-shrink-0" />
-              <span className="text-white/70 group-hover:text-white transition-colors font-light">
-                New Contribution
+              <PlusIcon className="w-6 h-6 text-emerald-400 group-hover:text-emerald-300 group-hover:rotate-90 transition-all duration-300 flex-shrink-0" />
+              <span className="text-emerald-300 group-hover:text-emerald-200 transition-colors font-bold text-lg tracking-wider uppercase">
+                New_Contribution
               </span>
+              <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/5 to-green-400/5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             </Link>
-
-            {/* <Link
-              to="/proposals"
-              className="group inline-flex items-center space-x-2 px-6 py-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 hover:border-white/20 transition-all duration-300 whitespace-nowrap"
-            >
-              <span className="text-white/70 group-hover:text-white transition-colors font-light">
-                Governance
-              </span>
-              <ArrowTrendingUpIcon className="w-4 h-4 text-white/70 group-hover:text-white transition-colors flex-shrink-0" />
-            </Link> */}
           </div>
         </div>
       </div>
 
       {/* Wallet Info Component */}
-      <WalletInfo
-        account={account!}
-        balance={balance}
-        tokenBalance={tokenBalance}
-      />
+      <div className="relative z-10">
+        <WalletInfo
+          account={account!}
+          balance={balance}
+          tokenBalance={tokenBalance}
+        />
+      </div>
 
       {/* Stats Component */}
-      <DashboardStats />
-
-      {/* Performance Chart Placeholder */}
-      {/* <div className="card-cyber">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-bold neon-text flex items-center space-x-2">
-            <ChartBarIcon className="w-6 h-6 text-neon-blue" />
-            <span>Performance Analytics</span>
-          </h3>
-          <div className="text-sm text-dark-400">Last 30 days</div>
-        </div>
-        <div className="h-64 bg-gradient-to-r from-dark-200/30 to-dark-300/30 rounded-lg border border-dark-400/30 flex items-center justify-center">
-          <div className="text-center">
-            <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-r from-neon-blue to-accent-purple rounded-full flex items-center justify-center animate-pulse">
-              <ArrowTrendingUpIcon className="w-8 h-8 text-white" />
-            </div>
-            <p className="text-dark-400 mb-2">Analytics Dashboard</p>
-            <p className="text-sm text-dark-500">
-              Chart integration coming soon
-            </p>
-          </div>
-        </div>
-      </div> */}
+      <div className="relative z-10">
+        <DashboardStats />
+      </div>
 
       {/* Recent Activity Component */}
-      <RecentActivity />
+      <div className="relative z-10">
+        <RecentActivity />
+      </div>
 
-      <ReputationDashboard/>
+      <div className="relative z-10">
+        <ReputationDashboard/>
+      </div>
 
+      {/* Custom Styles */}
+      <style>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0px) rotate(0deg); }
+          25% { transform: translateY(-10px) rotate(1deg); }
+          50% { transform: translateY(0px) rotate(0deg); }
+          75% { transform: translateY(10px) rotate(-1deg); }
+        }
+        
+        @keyframes glitch {
+          0%, 100% { text-shadow: 2px 0 #10b981, -2px 0 #059669; }
+          25% { text-shadow: -2px 0 #10b981, 2px 0 #059669; }
+          50% { text-shadow: 2px 0 #059669, -2px 0 #10b981; }
+          75% { text-shadow: -2px 0 #059669, 2px 0 #10b981; }
+        }
+        
+        .glitch-effect:hover {
+          animation: glitch 0.3s infinite;
+        }
+      `}</style>
     </div>
   );
 };

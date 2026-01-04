@@ -9,7 +9,9 @@ import {
   UserIcon,
   WalletIcon,
   Bars3Icon,
-  XMarkIcon
+  XMarkIcon,
+  CpuChipIcon,
+  SparklesIcon
 } from '@heroicons/react/24/outline';
 
 const ResponsiveNavbar: React.FC = () => {
@@ -56,7 +58,7 @@ const ResponsiveNavbar: React.FC = () => {
       {/* Mobile Overlay */}
       {isMobileMenuOpen && (
         <div 
-          className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 md:hidden"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
@@ -64,20 +66,21 @@ const ResponsiveNavbar: React.FC = () => {
       {/* Navbar */}
       <nav
         ref={navRef}
-        className="fixed top-6 left-6 right-6 z-50 bg-white/10 backdrop-blur-xl rounded-2xl shadow-2xl"
+        className="fixed top-6 left-6 right-6 z-50 bg-emerald-500/10 backdrop-blur-xl rounded-2xl shadow-2xl border border-emerald-500/30 font-mono"
       >
         <div className="max-w-7xl mx-auto px-6">
-          <div className="flex justify-between items-center h-16">
+          <div className="flex justify-between items-center h-20">
             {/* Logo */}
             <div className="flex-shrink-0">
-              <Link to="/" className="text-xl font-light text-white">
+              <Link to="/" className="text-2xl font-black text-white tracking-wider flex items-center space-x-2">
+                <CpuChipIcon className="w-6 h-6 text-emerald-400" />
                 <span>Chain</span>
-                <span className="font-normal">OSS</span>
+                <span className="bg-gradient-to-r from-emerald-400 to-green-400 bg-clip-text text-transparent">OSS</span>
               </Link>
             </div>
 
             {/* Desktop Navigation */}
-            <div className="hidden md:flex md:items-center md:space-x-1">
+            <div className="hidden md:flex md:items-center md:space-x-2">
               {navigation.map((item) => {
                 const Icon = item.icon;
                 return (
@@ -86,24 +89,25 @@ const ResponsiveNavbar: React.FC = () => {
                     to={item.href}
                     className={`${
                       isActive(item.href)
-                        ? 'text-white bg-white/10'
-                        : 'text-white/60 hover:text-white hover:bg-white/5'
-                    } flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200`}
+                        ? 'text-emerald-300 bg-emerald-500/20 border border-emerald-500/40'
+                        : 'text-emerald-400/80 hover:text-emerald-300 hover:bg-emerald-500/10 border border-transparent hover:border-emerald-500/30'
+                    } flex items-center px-6 py-3 rounded-xl text-sm font-bold tracking-wider uppercase transition-all duration-300 border relative overflow-hidden`}
                   >
-                    <Icon className="w-4 h-4 mr-2" />
-                    {item.name}
+                    <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/5 to-green-400/5 rounded-xl opacity-0 hover:opacity-100 transition-opacity duration-300"></div>
+                    <Icon className="w-5 h-5 mr-2 relative z-10" />
+                    <span className="relative z-10">{item.name.replace(' ', '_')}</span>
                   </Link>
                 );
               })}
             </div>
 
             {/* Desktop Wallet Section */}
-            <div className="hidden md:flex md:items-center md:space-x-3">
+            <div className="hidden md:flex md:items-center md:space-x-4">
               {isConnected ? (
-                <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-4">
                   {/* Account Display */}
-                  <div className="px-3 py-2 bg-white/5 rounded-lg">
-                    <span className="text-xs text-white/80 font-mono">
+                  <div className="px-4 py-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl backdrop-blur-sm">
+                    <span className="text-sm text-emerald-300 font-bold tracking-wider uppercase font-mono">
                       {formatAddress(account!)}
                     </span>
                   </div>
@@ -111,9 +115,9 @@ const ResponsiveNavbar: React.FC = () => {
                   {/* Disconnect Button */}
                   <button
                     onClick={disconnect}
-                    className="flex items-center px-3 py-2 hover:bg-white/5 text-white/60 hover:text-white/80 rounded-lg text-sm font-medium transition-all duration-200"
+                    className="flex items-center px-4 py-3 hover:bg-emerald-500/10 text-emerald-400/80 hover:text-emerald-300 border border-emerald-500/30 hover:border-emerald-500/40 rounded-xl text-sm font-bold tracking-wider uppercase transition-all duration-300"
                   >
-                    <XMarkIcon className="w-4 h-4 mr-1" />
+                    <XMarkIcon className="w-4 h-4 mr-2" />
                     Disconnect
                   </button>
                 </div>
@@ -121,10 +125,11 @@ const ResponsiveNavbar: React.FC = () => {
                 <button
                   onClick={connectWallet}
                   disabled={isLoading}
-                  className="flex items-center px-4 py-2 bg-white text-black hover:bg-white/90 rounded-lg font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="group relative flex items-center px-6 py-3 bg-gradient-to-r from-emerald-500 to-green-500 text-white hover:from-emerald-600 hover:to-green-600 rounded-xl font-black tracking-wider uppercase text-sm transition-all duration-300 shadow-lg hover:shadow-emerald-500/25 transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <WalletIcon className="w-4 h-4 mr-2" />
-                  {isLoading ? 'Connecting...' : 'Connect Wallet'}
+                  <SparklesIcon className="w-4 h-4 mr-2" />
+                  {isLoading ? 'Connecting...' : 'Connect_Wallet'}
+                  <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/20 to-green-400/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 </button>
               )}
             </div>
@@ -133,7 +138,7 @@ const ResponsiveNavbar: React.FC = () => {
             <div className="md:hidden">
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="p-2 rounded-lg hover:bg-white/5 text-white/60 hover:text-white transition-colors"
+                className="p-3 rounded-xl hover:bg-emerald-500/10 text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 hover:border-emerald-500/40 transition-all duration-300"
               >
                 {isMobileMenuOpen ? (
                   <XMarkIcon className="w-6 h-6" />
@@ -150,7 +155,7 @@ const ResponsiveNavbar: React.FC = () => {
               ? 'max-h-96 opacity-100 translate-y-0' 
               : 'max-h-0 opacity-0 -translate-y-2'
           } overflow-hidden`}>
-            <div className="px-2 pt-2 pb-4 space-y-1">
+            <div className="px-2 pt-2 pb-4 space-y-2">
               {/* Mobile Navigation Links */}
               {navigation.map((item) => {
                 const Icon = item.icon;
@@ -161,12 +166,12 @@ const ResponsiveNavbar: React.FC = () => {
                     onClick={() => setIsMobileMenuOpen(false)}
                     className={`${
                       isActive(item.href)
-                        ? 'text-white bg-white/10'
-                        : 'text-white/60 hover:text-white hover:bg-white/5'
-                    } flex items-center px-4 py-3 rounded-lg text-base font-medium transition-all duration-200`}
+                        ? 'text-emerald-300 bg-emerald-500/20 border border-emerald-500/40'
+                        : 'text-emerald-400/80 hover:text-emerald-300 hover:bg-emerald-500/10 border border-transparent hover:border-emerald-500/30'
+                    } flex items-center px-4 py-4 rounded-xl text-base font-bold tracking-wider uppercase transition-all duration-300 border`}
                   >
                     <Icon className="w-5 h-5 mr-3" />
-                    {item.name}
+                    {item.name.replace(' ', '_')}
                   </Link>
                 );
               })}
@@ -174,10 +179,10 @@ const ResponsiveNavbar: React.FC = () => {
               {/* Mobile Wallet Section */}
               <div className="pt-4 mt-4">
                 {isConnected ? (
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     {/* Account Display */}
-                    <div className="px-4 py-2 bg-white/5 rounded-lg">
-                      <span className="text-sm text-white/80 font-mono">
+                    <div className="px-4 py-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl">
+                      <span className="text-sm text-emerald-300 font-bold tracking-wider uppercase font-mono">
                         {formatAddress(account!)}
                       </span>
                     </div>
@@ -188,10 +193,10 @@ const ResponsiveNavbar: React.FC = () => {
                         disconnect();
                         setIsMobileMenuOpen(false);
                       }}
-                      className="w-full flex items-center justify-center px-4 py-3 hover:bg-white/5 text-white/60 hover:text-white/80 rounded-lg text-base font-medium transition-all duration-200"
+                      className="w-full flex items-center justify-center px-4 py-4 hover:bg-emerald-500/10 text-emerald-400/80 hover:text-emerald-300 border border-emerald-500/30 hover:border-emerald-500/40 rounded-xl text-base font-bold tracking-wider uppercase transition-all duration-300"
                     >
                       <XMarkIcon className="w-5 h-5 mr-2" />
-                      Disconnect Wallet
+                      Disconnect_Wallet
                     </button>
                   </div>
                 ) : (
@@ -201,10 +206,10 @@ const ResponsiveNavbar: React.FC = () => {
                       setIsMobileMenuOpen(false);
                     }}
                     disabled={isLoading}
-                    className="w-full flex items-center justify-center px-4 py-3 bg-white text-black hover:bg-white/90 rounded-lg text-base font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full flex items-center justify-center px-4 py-4 bg-gradient-to-r from-emerald-500 to-green-500 text-white hover:from-emerald-600 hover:to-green-600 rounded-xl font-black tracking-wider uppercase text-base transition-all duration-300 shadow-lg hover:shadow-emerald-500/25 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <WalletIcon className="w-5 h-5 mr-2" />
-                    {isLoading ? 'Connecting...' : 'Connect Wallet'}
+                    <SparklesIcon className="w-5 h-5 mr-2" />
+                    {isLoading ? 'Connecting...' : 'Connect_Wallet'}
                   </button>
                 )}
               </div>
@@ -214,7 +219,7 @@ const ResponsiveNavbar: React.FC = () => {
       </nav>
 
       {/* Spacer div to push content below the navbar */}
-      <div className="h-28"></div>
+      <div className="h-32"></div>
     </>
   );
 };

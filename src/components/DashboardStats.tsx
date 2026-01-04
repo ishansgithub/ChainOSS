@@ -3,7 +3,8 @@ import {
   CurrencyDollarIcon,
   TrophyIcon,
   StarIcon,
-  FireIcon
+  FireIcon,
+  CpuChipIcon
 } from '@heroicons/react/24/outline';
 
 const DashboardStats: React.FC = () => {
@@ -39,15 +40,15 @@ const DashboardStats: React.FC = () => {
   ];
 
   return (
-    <section className="relative py-24 lg:py-32">
+    <section className="relative py-24 lg:py-32 font-mono">
       <div className="container mx-auto px-6 lg:px-8 max-w-6xl">
-        <div className="text-center mb-20">
-          <h2 className="text-4xl lg:text-5xl font-light mb-4 text-white">
-            Your Impact
+        <div className="text-center mb-24">
+          <h2 className="text-5xl lg:text-6xl font-black mb-6 text-white tracking-wider uppercase">
+            Your_Impact
           </h2>
-          <div className="w-16 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent mx-auto mb-8"></div>
-          <p className="text-lg text-white/60 max-w-2xl mx-auto font-light leading-relaxed">
-            Track your progress and see how your contributions are making a difference
+          <div className="w-20 h-1 bg-gradient-to-r from-transparent via-emerald-400 to-transparent mx-auto mb-12"></div>
+          <p className="text-xl text-white/80 max-w-3xl mx-auto font-medium leading-relaxed tracking-wide">
+            <span className="text-emerald-400 font-bold">&gt;</span> Track your progress and see how your contributions are making a difference
           </p>
         </div>
 
@@ -55,31 +56,37 @@ const DashboardStats: React.FC = () => {
           {userStats.map((stat, index) => {
             const Icon = stat.icon;
             return (
-              <div key={index} className="group text-center">
-                <div className="space-y-6 p-8 bg-white/5 border border-white/10 rounded-xl group-hover:bg-white/10 group-hover:border-white/20 transition-all duration-300">
+              <div key={index} className="group text-center relative">
+                <div className="space-y-8 p-10 bg-emerald-500/5 border border-emerald-500/20 rounded-xl group-hover:bg-emerald-500/10 group-hover:border-emerald-500/30 transition-all duration-300 backdrop-blur-sm relative overflow-hidden">
+                  {/* Glossy overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-emerald-400/10 to-transparent pointer-events-none"></div>
+                  
                   {/* Icon */}
-                  <div className="inline-flex items-center justify-center w-12 h-12 bg-white/5 border border-white/10 rounded-xl group-hover:bg-white/10 group-hover:border-white/20 transition-all duration-300">
-                    <Icon className="w-6 h-6 text-white/70 group-hover:text-white transition-colors duration-300" />
+                  <div className="relative inline-flex items-center justify-center">
+                    <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-green-400 rounded-xl blur-lg opacity-0 group-hover:opacity-30 transition-opacity duration-300"></div>
+                    <div className="relative inline-flex items-center justify-center w-16 h-16 bg-emerald-500/10 border border-emerald-500/30 rounded-xl group-hover:bg-emerald-500/20 group-hover:border-emerald-500/40 transition-all duration-300">
+                      <Icon className="w-8 h-8 text-emerald-400 group-hover:text-emerald-300 transition-colors duration-300" />
+                    </div>
                   </div>
 
                   {/* Value */}
-                  <div className="space-y-1">
-                    <div className="text-2xl font-light text-white">
+                  <div className="space-y-3 relative z-10">
+                    <div className="text-4xl font-black text-white tracking-wider">
                       {stat.value}
                       {stat.suffix && (
-                        <span className="text-base text-white/50 ml-1">{stat.suffix}</span>
+                        <span className="text-lg text-emerald-400/80 font-bold ml-2">{stat.suffix}</span>
                       )}
                     </div>
                     
                     {/* Trend */}
-                    <div className="text-xs font-medium text-white/50 bg-white/10 border border-white/20 px-2 py-1 rounded-full inline-block">
+                    <div className="text-sm font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-3 py-2 rounded-full inline-block tracking-wider uppercase">
                       {stat.trend}
                     </div>
                   </div>
 
                   {/* Label */}
-                  <p className="text-sm text-white/50 font-light group-hover:text-white/60 transition-colors">
-                    {stat.label}
+                  <p className="text-lg text-emerald-300/80 font-bold tracking-wider uppercase group-hover:text-emerald-200 transition-colors relative z-10">
+                    {stat.label.replace(' ', '_')}
                   </p>
                 </div>
               </div>
